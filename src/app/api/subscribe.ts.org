@@ -1,0 +1,48 @@
+import { NextApiRequest, NextApiResponse } from 'next';
+import webPush from 'web-push';
+import { sql } from "@vercel/postgres";
+
+const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+const vapidSubject = process.env.VAPID_SUBJECT;
+
+if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject) {
+  console.error("VAPID keys or subject are missing.");
+}
+
+if (vapidSubject && vapidPublicKey && vapidPrivateKey) {
+  webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    console.log("req.method:", req.method);
+  if (req.method === 'POST') {
+    const subscription = req.body.subscription;
+
+    if (!subscription) {
+      return res.status(400).json({ error: 'Subscription is required' });
+    }
+
+    console.log("Subscription:", subscription);
+
+    try {
+      // Store the subscription in the database
+      await sql`
+        INSERT INTO pwa_subscription (endpoint, keys)
+        VALUES (${subscription.endpoint}, ${JSON.stringify(subscription.keys)})
+      `;
+
+      // Send a test notification
+      const payload = JSON.stringify({ title: 'Test Notification' });
+      await webPush.sendNotification(subscription, payload);
+
+      return res.status(201).json({ message: 'Subscription successful' });
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      return res.status(500).json({ error: 'Failed to send notification' });
+    }
+  } else {
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
+}

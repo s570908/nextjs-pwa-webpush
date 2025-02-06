@@ -17,49 +17,68 @@ export default function Header() {
     }
   }, []);
 
-  // PushSubscription을 가져오는 함수
-  // PushSubscription을 가져오는 함수
-  async function getPushSubscription(): Promise<PushSubscription | null> {
-    try {
-      const registration = await navigator.serviceWorker.getRegistration();
-
-      if (!registration) {
-        console.error("ServiceWorkerRegistration을 찾을 수 없습니다.");
-        return null;
-      }
-
-      if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-        console.error("VAPID Public key가 존재하지 않습니다.");
-        return null;
-      }
-
-      let subscription = await registration.pushManager.getSubscription();
-
-      if (subscription) {
-        const existingKey = subscription.options.applicationServerKey;
-        const newKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
-
-        if (existingKey && !compareUint8Arrays(new Uint8Array(existingKey), newKey)) {
-          await subscription.unsubscribe();
-          subscription = null;
-        }
-      }
-
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
-        });
-      }
-
-      console.log("getPushSubscription--subscription: ", subscription);
-
-      return subscription;
-    } catch (e) {
-      console.error("PushSubscription을 가져오는 동안 오류가 발생했습니다: ", e);
+// PushSubscription을 가져오는 함수
+async function getPushSubscription(): Promise<PushSubscription | null> {
+  try {
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+      console.error("VAPID Public key가 존재하지 않습니다.");
       return null;
     }
+
+    const registration = await navigator.serviceWorker.getRegistration();
+
+    if (!registration) {
+      console.error("ServiceWorkerRegistration을 찾을 수 없습니다.");
+      return null;
+    }
+
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      const existingKey = subscription.options.applicationServerKey;
+      const newKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
+
+      if (existingKey && !compareUint8Arrays(new Uint8Array(existingKey), newKey)) {
+        await subscription.unsubscribe();
+        subscription = null;
+      } else {
+        // 기존 구독이 있는 경우, 서버에 갱신 요청을 보냅니다.
+        await updateSubscriptionOnServer(subscription);
+      }
+    }
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+      });
+      // 새로운 구독을 서버에 저장합니다.
+      await updateSubscriptionOnServer(subscription);
+    }
+
+    console.log("getPushSubscription--subscription: ", subscription);
+
+    return subscription;
+  } catch (e) {
+    console.error("PushSubscription을 가져오는 동안 오류가 발생했습니다: ", e);
+    return null;
   }
+}
+
+// 서버에 구독 정보를 갱신하는 함수
+async function updateSubscriptionOnServer(subscription: PushSubscription) {
+  try {
+    const response = await axios.post('/api/subscribe', {
+      subscription,
+    });
+
+    if (response.status !== 201) {
+      throw new Error('Failed to update subscription on server');
+    }
+  } catch (error) {
+    console.error('Error updating subscription on server:', error);
+  }
+}
 
   function urlBase64ToUint8Array(base64String: string): Uint8Array {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -102,9 +121,10 @@ export default function Header() {
       "Notification" in window &&
       "PushManager" in window
     ) {
-      //console.log("Notification.permission: ", Notification.permission);
+      
       Notification.requestPermission().then(async (result) => {
         if (result === "granted") {
+          //console.log("getPushSubscription: ");
           const subscription = await getPushSubscription();
           //console.log("onClickAlert--subscription: ", subscription);
           await savePushSubscription(subscription);

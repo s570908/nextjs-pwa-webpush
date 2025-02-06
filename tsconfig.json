@@ -21,6 +21,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/manifest.ts.org", "src/scripts/createTables.mjs", "src/app/api/subscribe.ts.org"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/manifest.ts.org", "src/scripts/createTables.mjs", "src/app/api/subscribe.ts.org", "src/scripts/init-db.mjs"],
   "exclude": ["node_modules"]
 }

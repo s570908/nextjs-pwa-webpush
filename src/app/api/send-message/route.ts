@@ -1,4 +1,4 @@
-import webPush, { PushSubscription } from "web-push";
+import webPush, { PushSubscription, sendNotification } from "web-push";
 
 export async function POST(req: Request) {
 
@@ -12,9 +12,7 @@ try {
   }
 
   const subscription = pushSubscription as PushSubscription;
-  const payload = JSON.stringify({ title, message });
-
-  
+  const payload = JSON.stringify({ title, message });  
 
   if (
     !process.env.VAPID_SUBJECT ||
@@ -34,12 +32,10 @@ try {
     TTL: 60,
   };
 
-    const response = await webPush.sendNotification(
-      subscription,
-      payload,
-      options,
-    );
-    return new Response(JSON.stringify({ success: true }), { status: 201 });
+  // sendNotification 함수 사용
+  await sendNotification(subscription, payload, options);
+//   
+  return new Response(JSON.stringify({ success: true }), { status: 201 });
 } catch (error) {
   console.error('Error sending notification:', error);
   return new Response(JSON.stringify({ error: 'Failed to send notification' }), { status: 500 });

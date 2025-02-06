@@ -11,7 +11,8 @@
     "prismagen:build": "prisma generate && next build",
     "vercel-deploy": "next build && next export",
     "seed": "node -r dotenv/config src/scripts/seed.js",
-    "create:tables": "ts-node src/scripts/createTables.mjs"
+    "create:tables": "ts-node src/scripts/createTables.mjs",
+    "add:constraint": "ts-node src/scripts/init-db.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",

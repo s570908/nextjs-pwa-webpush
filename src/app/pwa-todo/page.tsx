@@ -41,7 +41,8 @@ export default function PwaToDoPage() {
     const dbName = "pwa-db";
     const request = indexedDB.open(dbName);
 
-    // 데이터베이스가 열릴 때 실행되는 이벤트 핸들러
+    // 데이터베이스가 처음 생성되거나 버전이 변경될 때 발생합니다. 
+    // 이 이벤트 핸들러에서 데이터베이스 객체를 가져옵니다.
     request.onupgradeneeded = function (event) {
       // @ts-ignore
       const db = event.target.result;
@@ -54,6 +55,8 @@ export default function PwaToDoPage() {
 
       objectStore.createIndex("due-index", "due_date");
 
+      //객체 저장소가 생성된 후 트랜잭션이 완료되면 실행되는 이벤트 핸들러입니다. 
+      // 여기서는 추가 작업을 수행하지 않습니다.
       objectStore.transaction.oncomplete = function (_event: Event) {
         // Store values in the newly created objectStore.
         var customerObjectStore = db
@@ -62,6 +65,8 @@ export default function PwaToDoPage() {
       };
     };
 
+    // 데이터베이스가 성공적으로 열릴 때 발생합니다. 이 이벤트 핸들러에서 데이터베이스 객체를 가져오고, 
+    // "todo" 객체 저장소에 대한 읽기/쓰기 트랜잭션을 시작합니다.
     request.onsuccess = function (event) {
       // @ts-ignore
       const db = event.target.result;

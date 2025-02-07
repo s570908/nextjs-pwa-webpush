@@ -30,11 +30,14 @@ const Puller = styled("div")(({ theme }) => ({
 
 export default function AddDrawer({ open, onOpen, onClose }: Props) {
   const [task, setTask] = useState<string>("");
-  const [due, setDue] = useState<Dayjs | null>(dayjs());
+  const [due, setDue] = useState<Dayjs | null>(dayjs().local());
   const queryClient = useQueryClient();
 
   const onClickAdd = async () => {
-    mutation.mutate({ task, due: due?.toISOString() ?? "" });
+    const dueInUTC = due?.utc().toISOString() ?? "";
+    console.log("due: ", due);
+    console.log("dueInUTC: ", dueInUTC);
+    mutation.mutate({ task, due: dueInUTC });
     onClose();
   };
 

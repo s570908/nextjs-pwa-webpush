@@ -123,6 +123,7 @@ async function updateSubscriptionOnServer(subscription: PushSubscription) {
     ) {
       
       Notification.requestPermission().then(async (result) => {
+        console.log("Clicked! onClickAlert--result: ", result);
         if (result === "granted") {
           //console.log("getPushSubscription: ");
           const subscription = await getPushSubscription();

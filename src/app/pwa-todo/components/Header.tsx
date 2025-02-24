@@ -120,22 +120,42 @@ async function updateSubscriptionOnServer(subscription: PushSubscription) {
       "serviceWorker" in navigator &&
       "Notification" in window &&
       "PushManager" in window
-    ) {
-      
-      Notification.requestPermission().then(async (result) => {
-        console.log("Clicked! onClickAlert--result: ", result);
-        if (result === "granted") {
-          //console.log("getPushSubscription: ");
-          const subscription = await getPushSubscription();
-          //console.log("onClickAlert--subscription: ", subscription);
-          await savePushSubscription(subscription);
-          setAlertGranted(true);
-        } else if (result === "denied") {
-          setAlertGranted(false);
+    ) {      
+        try {
+            const result = await Notification.requestPermission();
+            console.log("Clicked! onClickAlert--result: ", result);
+            if (result === "granted") {
+                //console.log("getPushSubscription: ");
+                const subscription = await getPushSubscription();
+                //console.log("onClickAlert--subscription: ", subscription);
+                await savePushSubscription(subscription);
+                setAlertGranted(true);
+            } else if (result === "denied") {
+                setAlertGranted(false);
+                alert('Notifications permission has been blocked. Please reset it in the Page Info by clicking the tune icon next to the URL.');
+            }
+        } catch (error) {
+            console.error("Error requesting notification permission: ", error);
         }
-      });
     }
   }
+
+//   async function handleNotificationPermission() {
+//   try {
+//     const result = await Notification.requestPermission();
+//     console.log("Clicked! onClickAlert--result: ", result);
+//     if (result === "granted") {
+//       const subscription = await getPushSubscription();
+//       await savePushSubscription(subscription);
+//       setAlertGranted(true);
+//     } else if (result === "denied") {
+//       setAlertGranted(false);
+//       alert('Notifications permission has been blocked. Please reset it in the Page Info by clicking the tune icon next to the URL.');
+//     }
+//   } catch (error) {
+//     console.error("Error requesting notification permission: ", error);
+//   }
+// }
 
   // 구독하고 있는 클라이언트들에게 Push 알림을 보내는 함수
   async function pushNotification() {

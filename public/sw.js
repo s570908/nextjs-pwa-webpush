@@ -48,7 +48,9 @@ function periodicCheck() {
       //console.log("range, cursorRequest: ", range, cursorRequest);
 
       cursorRequest.onsuccess = function (event) {
+        
         const cursor = event.target.result;
+        console.log("periodic check: cursorRequest.onsuccess--cursor", cursor);
         if (cursor) {
           const todo = cursor.value;          
           if (todo && todo.task) {

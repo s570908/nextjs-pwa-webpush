@@ -1,10 +1,21 @@
 "use client";
 import { Button } from "@mui/material";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  const onClickVibrate = () => {
-    navigator.vibrate(200);
-  };
+    const [isMount, setMount] = useState(false)
+
+    useEffect(() => {
+        setMount(true)
+    }, [])
+    
+    const onClickVibrate = () => {
+        navigator.vibrate(200);
+    };
+
+    if (!isMount) {
+        return null
+    }
 
   return (
     <>

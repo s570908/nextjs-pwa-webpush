@@ -2,7 +2,9 @@ import webPush, { PushSubscription } from "web-push";
 
 export async function POST(req: Request) {
   const { pushSubscription, title, message } = await req.json();
-  const subscription = JSON.parse(pushSubscription) as PushSubscription;
+  const subscription = typeof pushSubscription === 'string' 
+    ? JSON.parse(pushSubscription) as PushSubscription 
+    : pushSubscription as PushSubscription;
   const payload = JSON.stringify({ title, message });
 
   if (

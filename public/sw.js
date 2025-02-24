@@ -45,7 +45,7 @@ function periodicCheck() {
 
       const cursorRequest = dueIndex.openCursor(range);
 
-      //console.log("range, cursorRequest: ", range, cursorRequest);
+      console.log("range, cursorRequest: ", range, cursorRequest);
 
       cursorRequest.onsuccess = function (event) {
         

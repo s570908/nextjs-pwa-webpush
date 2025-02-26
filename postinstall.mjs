@@ -12,3 +12,5 @@ fse.copySync(
   path.join(topDir, "public", "tinymce"),
   { overwrite: true },
 );
+
+console.log('Postinstall script running...');

@@ -1,6 +1,8 @@
-import { sql } from "@vercel/postgres";
+import { PrismaClient } from '@prisma/client';
 import { SubscriptionInfo } from "@/app/pwa-todo/types";
 import webPush from 'web-push';
+
+const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -12,14 +14,16 @@ export async function POST(req: Request) {
   }
 
   try {
-    const data = await sql`
-      INSERT INTO pwa_subscription (endpoint, keys)
-      VALUES (${subscription.endpoint}, ${JSON.stringify(subscription.keys)})
-      ON CONFLICT (endpoint) DO UPDATE
-      SET keys = EXCLUDED.keys
-    `;
+    const data = await prisma.subscription.upsert({
+      where: { endpoint: subscription.endpoint },
+      update: { keys: subscription.keys },
+      create: {
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
+      },
+    });
     console.log('Inserted or updated subscription:', data);
-    return new Response(JSON.stringify({ success: data.rowCount === 1 }), { status: 201 });
+    return new Response(JSON.stringify({ success: true }), { status: 201 });
   } catch (error) {
     console.error('Error inserting or updating subscription:', error);
     return new Response(JSON.stringify({ error: 'Failed to insert or update subscription' }), { status: 500 });
@@ -28,12 +32,10 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const data = await sql<SubscriptionInfo>`
-      SELECT *
-      FROM pwa_subscription
-      ORDER BY id
-    `;
-    return new Response(JSON.stringify(data.rows), { status: 200 });
+    const data = await prisma.subscription.findMany({
+      orderBy: { id: 'asc' },
+    });
+    return new Response(JSON.stringify(data), { status: 200 });
   } catch (error) {
     console.error('Error fetching subscriptions:', error);
     return new Response(JSON.stringify({ error: 'Failed to fetch subscriptions' }), { status: 500 });
@@ -45,13 +47,12 @@ export async function sendNotification(subscription: webPush.PushSubscription, p
     await webPush.sendNotification(subscription, payload, options);
   } catch (error) {
     if ((error as any).statusCode === 410) {
-      // Handle expired or unsubscribed subscription
+      // 만료되었거나 더 이상 유효하지 않은 구독 처리
       console.error('Subscription has expired or is no longer valid:', error);
-      // Remove the subscription from your database
-      await sql`
-        DELETE FROM pwa_subscription
-        WHERE endpoint = ${subscription.endpoint}
-      `;
+      // 데이터베이스에서 구독 제거
+      await prisma.subscription.delete({
+        where: { endpoint: subscription.endpoint },
+      });
     } else {
       console.error('Error sending notification:', error);
     }

@@ -1,46 +1,49 @@
-import { config } from 'dotenv';
-import { sql } from "@vercel/postgres";
+import { PrismaClient } from '@prisma/client';
+import dotenv from 'dotenv';
 
-// Load environment variables from .env file
-config();
+// .env 파일에서 환경 변수 로드
+dotenv.config();
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/mydatabase',
+    },
+  },
+});
 
 async function createTables() {
   try {
-    // Create pwa_todo table if it doesn't exist
-    await sql`
-      CREATE TABLE IF NOT EXISTS pwa_todo (
-        id SERIAL PRIMARY KEY,
-        task TEXT NOT NULL,
-        due TIMESTAMPTZ NOT NULL,
-        done BOOLEAN NOT NULL DEFAULT FALSE
-      );
-    `;
+    // Prisma 모델을 사용하여 pwa_todo 테이블 생성
+    await prisma.pwa_todo.create({
+      data: {}, // 초기 데이터 없음
+    });
     console.log("pwa_todo 테이블이 성공적으로 생성되었습니다.");
 
-    // Alter pwa_todo table if it exists
-    await sql`
-      DO $$
-      BEGIN
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pwa_todo' AND column_name='due' AND data_type='timestamp without time zone') THEN
-          ALTER TABLE pwa_todo
-          ALTER COLUMN due TYPE TIMESTAMPTZ;
-        END IF;
-      END $$;
-    `;
-    console.log("pwa_todo 테이블의 스키마가 성공적으로 변경되었습니다.");
+    // Prisma 모델을 사용하여 Subscription 테이블 생성
+    await prisma.subscription.create({
+      data: {}, // 초기 데이터 없음
+    });
+    console.log("Subscription 테이블이 성공적으로 생성되었습니다.");
 
-    // Create pwa_subscription table if it doesn't exist
-    await sql`
-      CREATE TABLE IF NOT EXISTS pwa_subscription (
-        id SERIAL PRIMARY KEY,
-        endpoint TEXT NOT NULL,
-        keys JSONB NOT NULL
-      );
-    `;
-    console.log("pwa_subscription 테이블이 성공적으로 생성되었습니다.");
+    // Prisma 모델을 사용하여 user 테이블 생성
+    await prisma.user.create({
+      data: {}, // 초기 데이터 없음
+    });
+    console.log("user 테이블이 성공적으로 생성되었습니다.");
+
+    // Prisma 모델을 사용하여 notification 테이블 생성
+    await prisma.notification.create({
+      data: {}, // 초기 데이터 없음
+    });
+    console.log("notification 테이블이 성공적으로 생성되었습니다.");
   } catch (err) {
     console.error("테이블 생성 중 오류가 발생했습니다:", err);
+  } finally {
+    // Prisma 클라이언트 연결 해제
+    await prisma.$disconnect();
   }
 }
 
+// createTables 함수 실행
 createTables();

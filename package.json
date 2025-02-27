@@ -19,6 +19,7 @@
     "@mui/icons-material": "^5.15.12",
     "@mui/material": "^5.15.12",
     "@mui/x-date-pickers": "^6.19.6",
+    "@prisma/client": "^6.4.1",
     "@tanstack/react-query": "^5.25.0",
     "@tinymce/tinymce-react": "^5.1.1",
     "@vanilla-extract/css": "^1.15.3",
